@@ -136,13 +136,14 @@ app.post('/api/chat', async (req, res) => {
     const accessToken = await userClient.getAccessToken();
 
     const projectId = process.env.GOOGLE_PROJECT_ID;
-    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-001';
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const location = process.env.GEMINI_LOCATION || 'us-central1';
 
     const apiUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
     const payload = {
       contents: [{
+        role: 'user',
         parts: [{ text: prompt }],
       }],
     };
