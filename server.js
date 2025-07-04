@@ -84,7 +84,7 @@ app.get('/auth/google/callback', async (req, res) => {
     }
 
     const { tokens } = await oauth2Client.getToken(code);
-    
+
     // IMPORTANT: Create a new OAuth2 client for the user to handle tokens independently.
     const userClient = new google.auth.OAuth2();
     userClient.setCredentials(tokens);
@@ -147,30 +147,36 @@ app.post('/api/chat', async (req, res) => {
       }],
     };
 
-    const apiResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const apiResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!apiResponse.ok) {
-      const errorBody = await apiResponse.text();
-      console.error('Gemini API Error:', errorBody, 'Status:', apiResponse.status);
-      return res.status(apiResponse.status).json({ error: `Gemini API request failed: ${errorBody}` });
+      if (!apiResponse.ok) {
+        const errorBody = await apiResponse.text();
+        console.error('Gemini API Error:', errorBody, 'Status:', apiResponse.status);
+        return res.status(apiResponse.status).json({ error: `Gemini API request failed: ${errorBody}` });
+      }
+
+      const data = await apiResponse.json();
+
+      const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't get a response.";
+      res.json({ response: botResponse });
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      // This could be a token error, network error, etc.
+      res.status(500).json({ error: 'Failed to get response from Gemini.' });
     }
-
-    const data = await apiResponse.json();
-    
-    const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't get a response.";
-    res.json({ response: botResponse });
-
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error calling Gemini API:', error);
-    // This could be a token error, network error, etc.
-    res.status(500).json({ error: 'Failed to get response from Gemini.' });
+      // This could be a token error, network error, etc.
+      res.status(500).json({ error: 'Failed to get response from Gemini.' });
   }
 });
 
